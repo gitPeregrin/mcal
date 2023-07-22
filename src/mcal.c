@@ -26,11 +26,11 @@ enum colors{
 };
 
 #define SetColor(color)		printf("\033[%dm",color)
-#define strDEF				"\033[0m"
-#define strRED				"\033[31m"
-#define strBLUE				"\033[34m"
-#define strBGRED			"\033[41m"
-#define WhiteSpace			puts("\b \b")
+#define strDEF			"\033[0m"
+#define strRED			"\033[31m"
+#define strBLUE			"\033[34m"
+#define strBGRED		"\033[41m"
+#define WhiteSpace		puts("\b \b")
 
 
 
@@ -40,57 +40,56 @@ enum colors{
 
 //debug macro
 #define _time_start_		clock_t _old_ = clock();
-#define _time_stop_			clock_t _now_ = clock();\
-							printf("\nTime check:" strRED "%s %lums\n"\
-							strDEF,__func__,_now_-_old_);
-#define _debug(var)			printf(#var "=%d\n" ,var)
+#define _time_stop_		clock_t _now_ = clock();\
+				printf("\nTime check:" strRED "%s %lums\n"\
+				strDEF,__func__,_now_-_old_);
+#define _debug(var)		printf(#var "=%d\n" ,var)
 
 //terminal size
 #define _getTermSize		struct winsize w;ioctl(STDOUT_FILENO,\
-							TIOCGWINSZ, &w)
-#define COLUMNS				(w.ws_col)
-#define ROWS				(w.ws_row)
+				TIOCGWINSZ, &w)
+#define COLUMNS			(w.ws_col)
+#define ROWS			(w.ws_row)
 
 //aliases
-#define ROOT				start_task_chain
-#define TASK				cur_task
-#define OTSK				old_task
-#define ONEX				OTSK->next
-#define OSTR				OTSK->raw_str
-#define ODAY				OTSK->day
-#define OMON				OTSK->month
-#define OYER				OTSK->year
-#define OFLG				OTSK->isRepeatable
-#define OMSG				OTSK->msg
-#define TFLG				TASK->isRepeatable
-#define TMSG				TASK->msg
-#define TDAY				TASK->day
-#define TMON				TASK->month
-#define TYER				TASK->year
-#define TNEX				TASK->next
-#define NDAY				clock->tm_mday
-#define NMON				clock->tm_mon
-#define NYER				clock->tm_year
-#define RESULT				OTSK
+#define ROOT			start_task_chain
+#define TASK			cur_task
+#define OTSK			old_task
+#define ONEX			OTSK->next
+#define OSTR			OTSK->raw_str
+#define ODAY			OTSK->day
+#define OMON			OTSK->month
+#define OYER			OTSK->year
+#define OFLG			OTSK->isRepeatable
+#define OMSG			OTSK->msg
+#define TFLG			TASK->isRepeatable
+#define TMSG			TASK->msg
+#define TDAY			TASK->day
+#define TMON			TASK->month
+#define TYER			TASK->year
+#define TNEX			TASK->next
+#define NDAY			clock->tm_mday
+#define NMON			clock->tm_mon
+#define NYER			clock->tm_year
+#define RESULT			OTSK
 
 /*
  * 		CONST DEFS
  */
 
-#define START_Y				(1900)
-#define BUFF_SIZE			(256)
-#define FALSE 				(0)
-#define TRUE 				(1)
-
+#define START_Y			(1900)
+#define BUFF_SIZE		(256)
+#define FALSE 			(0)
+#define TRUE 			(1)
 
 /*
  * 		FUNCTIONS
  */
 
-struct task * init_task(char str[BUFF_SIZE]); 	// собираем из строки структуру
-void preload_tasks(void);				// читаем таски из файла
-void print_task(struct task * cur_task);
-void lock_chain(struct task * ct);
+struct task * init_task(char);		// init struck by string
+void preload_tasks(void);		// read tasks from file
+void print_task(struct task *);		// printing task chain (debug)
+void lock_chain(struct task *);		// set references
 
 
 /*
@@ -99,12 +98,12 @@ void lock_chain(struct task * ct);
 
 struct task {
 	char raw_str[300];
-	int day;			// день (1-31)
-	int month;			// месяц (1-12)
-	int year;			// год (2023 например)
-	char isRepeatable;	// флажки повтора (D,M,Y,N)
-	char * msg;			// текст задания
-	struct task * next;	// указатель на следующее задание
+	int day;			// day (1-31)
+	int month;			// month (1-12)
+	int year;			// year (2023 например)
+	char isRepeatable;		// rep flag (D,M,Y,N)
+	char * msg;			// message
+	struct task * next;
 };
 
 struct task * start_task_chain;
@@ -146,7 +145,7 @@ int main(void) {
 	 * 	START DRAWING
 	 */
 
-	#define line	COLUMNS
+	#define line		COLUMNS
 	#define r_s		COLUMNS-28
 	#define l_s		28
 	#define w_s		7
@@ -158,11 +157,11 @@ int main(void) {
 	puts(right);
 
 	/*
-	 * текстовые паттерны для обработки
-	 *
-	 * 		@ - будущее событие - @
-	 * 		# - настоящее 		- #
-	 * 		$ - прошлое			- $
+     * 		string patterns
+     *
+     * 		@ - future task   - @
+     * 		# - present task  - #
+     * 		$ - past task	  - $
 	 */
 
 
