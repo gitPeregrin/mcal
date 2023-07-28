@@ -14,6 +14,8 @@
 #include <time.h>
 #include <sys/ioctl.h>
 
+#include "bits.h"
+
 /*
  * 		ANSI DEFS
  */
@@ -26,12 +28,12 @@ enum colors{
 };
 
 #define SetColor(color)		printf("\033[%dm",color)
+#define SetCurPos(l,c)		printf("\033[%d;%dH",c,l)
 #define strDEF			"\033[0m"
 #define strRED			"\033[31m"
 #define strBLUE			"\033[34m"
 #define strBGRED		"\033[41m"
 #define WhiteSpace		puts("\b \b")
-
 
 
 /*
@@ -50,6 +52,9 @@ enum colors{
 				TIOCGWINSZ, &w)
 #define COLUMNS			(w.ws_col)
 #define ROWS			(w.ws_row)
+
+#define min(a,b)		(a <= b ? a : b)
+#define max(a,b)		(a <= b ? b : a)
 
 //aliases
 #define ROOT			start_task_chain
@@ -86,10 +91,12 @@ enum colors{
  * 		FUNCTIONS
  */
 
-struct task * init_task(char);		// init struck by string
+struct task * init_task(char []);	// init struck by string
 void preload_tasks(void);		// read tasks from file
 void print_task(struct task *);		// printing task chain (debug)
 void lock_chain(struct task *);		// set references
+char * clearStr(char *);
+unsigned char len(char *);
 
 
 /*
@@ -126,7 +133,6 @@ int main(void) {
 	time_t now; time(&now);
 	struct tm * clock = localtime(&now);
 
-	int def_wday = NDAY%week;
 	int start_wday = clock->tm_wday;
 	int year = START_Y + NYER;
 
@@ -138,23 +144,9 @@ int main(void) {
 	preload_tasks();
 
 	// вычисляем с какого дня недели начинается первое число месяца
-	for(int i = 0; i<=def_wday;i++)
+	for(int i = NDAY; i != 1; i--) {
 		start_wday == 1 ? start_wday = week: start_wday--;
-
-	/*
-	 * 	START DRAWING
-	 */
-
-	#define line		COLUMNS
-	#define r_s		COLUMNS-28
-	#define l_s		28
-	#define w_s		7
-
-	int left_size = 28;
-
-	char left[l_s * w_s];
-	char right[r_s];
-	puts(right);
+	}
 
 	/*
      * 		string patterns
@@ -164,13 +156,51 @@ int main(void) {
      * 		$ - past task	  - $
 	 */
 
+	// building side blocks
 
+	char left[BUFF_SIZE];
+	char right[500];
+	const unsigned char step = 31;
+	unsigned char shift;
+
+	// building left side
+	shift = 0;
+	#define left left+shift
+
+	sprintf(left," %-25s %4d",month[NMON],NYER+START_Y);
+	puts(left);
+	shift += step;
+
+	sprintf(left,"%s",head_str);
+	puts(left);
+	shift += step+19;
+	unsigned char o = shift;
+
+	for(int day = 1; day < m_size[NMON] + start_wday; day++){
+	    int diff = day - start_wday + 1;
+	    if(max(0,diff)) 	sprintf(left, " %2d ", diff);
+	    else 		sprintf(left, "    ");
+
+	    shift +=4;
+	}
+	#undef left
+	puts(left+o);
+
+
+
+	puts("Проверка целостности левой части:");
+	puts(left);
+
+	// building right side
+	shift = 0;
+
+
+	#define right right+shift
 
 	while(1){
 		switch(TFLG){
 		case 'D': // если событие каждый день
 			sprintf(right,"#%s#",TMSG);
-			puts("case D");
 			break;
 		case 'M': // если событие каждый месяц
 			if(TDAY > NDAY)
@@ -202,20 +232,37 @@ int main(void) {
 				}
 			break;
 		}
+
+		shift = len(TMSG);
+
 		if(TNEX != NULL)
 			TASK = TNEX;
 		else
 			break;
 	}
 
-	sprintf(left," %-25s %d",month[NMON],NYER+START_Y);
-	puts(left);
-	sprintf(left,"%s",head_str);
+	#undef right
 
-	puts(left);
+	/*
+	 * 	START DRAWING
+	 */
 
-	//TODO нужно сделать заполнение строки текстом
-	//TODO а потом уже puts() всего текста на экран
+	unsigned char now_left_side_flag = TRUE;
+	int lc = 0, rc = 0;
+	while(TRUE){
+
+	    if(now_left_side_flag) {
+		putchar(left[lc]);
+		lc++;
+		if(lc%31 == 0) now_left_side_flag = FALSE;
+	    }
+	    else {
+		putchar(right[rc]);
+		rc++;
+		if(rc%(COLUMNS-31) == 0) now_left_side_flag = TRUE;
+	    }
+
+	}
 
 	/*
 	 * 	END DRAWING
@@ -279,7 +326,7 @@ struct task * init_task(char str[BUFF_SIZE]){
 	struct task * RESULT = malloc(sizeof(struct task));
 	unsigned char attr = 0, start_to_read = 0;
 
-	sprintf(OSTR,"%s",str);
+	sprintf(OSTR,"%s",clearStr(str));
 
 	for(int i=0;i<BUFF_SIZE;i++){
 
@@ -319,9 +366,23 @@ struct task * init_task(char str[BUFF_SIZE]){
 	return RESULT;
 }
 
+unsigned char len(char * str){
+  unsigned char result = 0;
+  while(str[result] != '\0') result++;
+  return result;
+}
+
+char * clearStr(char * str){
+  int i = 0;
+  while(str[i]!='\0'){
+      if(str[i] == '\n') str[i] = '\0';
+      i++;
+  }
+  return str;
+}
 
 void print_task(struct task * cur_task) {
-	printf(strRED "%p:\n" strDEF, 	TASK);
+	printf(strRED "%p:\n" strDEF, 		TASK);
 	printf("Day: %d\n", 			TDAY);
 	printf("Month: %d\n",			TMON);
 	printf("Year: %d\n",			TYER);
@@ -342,3 +403,5 @@ void lock_chain(struct task * TASK){
 		}
 	}
 }
+
+
