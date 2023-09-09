@@ -37,14 +37,14 @@ uint powi(uchar num, uchar deg){
 }
 
 bool getbit(lint num, uchar b){
-  uint pwrd = powi(2,b-1);
-  return (num & pwrd) >> (b - 1);
+  uint pwrd = powi(2,b);
+  return (num & pwrd) >> b;
 }
 
 void setbit(lint * num, uchar b, bool exp){
-  uint pwrd = (powi(2,b-1));
+  uint pwrd = (powi(2,b));
   if(getbit(*num,b) == exp) return;
-  *num += (*num & pwrd) >> (b - 1) ? -1 * pwrd : pwrd;
+  *num += (*num & pwrd) >> b ? -1 * pwrd : pwrd;
 }
 
 #endif /* BITS_H_ */
